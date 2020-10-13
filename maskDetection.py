@@ -1,6 +1,5 @@
 # import the necessary packages
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import AveragePooling2D
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
@@ -23,10 +22,10 @@ import os
 # initialize the initial learning rate, number of epochs to train for,
 # and batch size
 LR = 1e-4
-EPOCHS = 8
-BS = 64
+EPOCHS = 20
+BS = 32
 
-DIRECTORY = r"C:\Users\90534\Desktop\Belgeler\Yaptigim projeler\calismam\dataset"
+DIRECTORY = r"C:\Users\90534\Desktop\Belgeler\Yaptigim projeler\Face-Mask-Detection\dataset"
 CATEGORIES = ["with_mask", "without_mask"]
 
 # grab the list of images in our dataset directory, then initialize
@@ -40,7 +39,7 @@ for category in CATEGORIES:
     path = os.path.join(DIRECTORY, category)
     for img in os.listdir(path):
         img_path = os.path.join(path, img)
-        image = load_img(img_path, target_size=(224, 224))
+        image = load_img(img_path ,target_size=(224, 224))
         image = img_to_array(image)
         image = preprocess_input(image)
 
@@ -70,42 +69,25 @@ aug = ImageDataGenerator(
     horizontal_flip=True,
     fill_mode="nearest")
 
-# load the MobileNetV2 network, ensuring the head FC layer sets are
-# left off
-#baseModel = MobileNetV2(weights="imagenet", include_top=False,
-#                        input_tensor=Input(shape=(224, 224, 3)))
-
-# construct the head of the model that will be placed on top of the
-# the base model
-#headModel = baseModel.output
-#headModel = AveragePooling2D(pool_size=(7, 7))(headModel)
-#headModel = Flatten(name="flatten")(headModel)
-#headModel = Dense(128, activation="relu")(headModel)
-#headModel = Dropout(0.5)(headModel)
-#headModel = Dense(2, activation="softmax")(headModel)
 
 model = Sequential()
-model.add(Conv2D(32, kernel_size=(5, 5),activation='elu',input_shape=(224, 224, 3)))
-model.add(Conv2D(32, kernel_size=(5,5),activation='relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(32, kernel_size=(5, 5),activation='relu',input_shape=(224, 224, 3)))
+model.add(Conv2D(64, kernel_size=(5,5),activation='relu'))
+model.add(AveragePooling2D(pool_size=(2,2)))
 model.add(Dropout(0.25))
-model.add(Conv2D(64, kernel_size=(3,3),activation='relu'))
-model.add(MaxPooling2D(pool_size=(2,2)))
+model.add(Conv2D(64, kernel_size=(5,5),activation='relu'))
+model.add(AveragePooling2D(pool_size=(2,2)))
 model.add(Dropout(0.25))
 # full connect
 model.add(Flatten())
 model.add(Dense(64, activation='elu'))
+
 model.add(Dropout(0.25))
+model.add(Dense(64, activation='elu'))
 # exit layer
 model.add(Dense(2,activation='softmax'))
-# place the head FC model on top of the base model (this will become
-# the actual model we will train)
-#model = Model(inputs=baseModel.input, outputs=headModel)
 
-# loop over all layers in the base model and freeze them so they will
-# *not* be updated during the first training process
-#for layer in baseModel.layers:
-#    layer.trainable = False
+
 
 # compile our model
 print("[INFO] compiling model...")
@@ -136,16 +118,17 @@ print(classification_report(testY.argmax(axis=1), predIdxs,
 
 # serialize the model to disk
 print("[INFO] saving mask detector model...")
-model.save("mask_detector.model", save_format="h5")
+model.save("mask_detector.model", save_format="h5",)
 
 # plot the training loss and accuracy
 N = EPOCHS
 plt.style.use("ggplot")
 plt.figure()
-plt.plot(np.arange(0, N), History.history["loss"], label="train_loss",color='red')
-plt.plot(np.arange(0, N), History.history["val_loss"], label="val_loss",color='yellow')
 plt.plot(np.arange(0, N), History.history["accuracy"], label="train_acc",color= 'blue')
 plt.plot(np.arange(0, N), History.history["val_accuracy"], label="val_acc",color ='black')
+plt.plot(np.arange(0, N), History.history["loss"], label="train_loss",color='red')
+plt.plot(np.arange(0, N), History.history["val_loss"], label="val_loss",color='yellow')
+
 
 plt.title("Training Loss and Accuracy")
 plt.xlabel("Epoch #")
