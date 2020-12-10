@@ -68,7 +68,8 @@ aug = ImageDataGenerator(
     shear_range=0.15,
     horizontal_flip=True,
     fill_mode="nearest")
-
+trainX = trainX/255.0
+testX =  testX/255.0
 
 model = Sequential()
 model.add(Conv2D(32, kernel_size=(5, 5),activation='relu',input_shape=(224, 224, 3)))
